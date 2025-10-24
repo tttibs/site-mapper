@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Mapping Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow: hidden;
+            background: #f5f5f5;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Left Toolbar */
+        .toolbar {
+            width: 280px;
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .toolbar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .toolbar-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+
+        .toolbar-header p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .toolbar-section {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .toolbar-section h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .page-type {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: move;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-type:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: translateX(3px);
+        }
+
+        .page-type-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .page-type-info {
+            flex: 1;
+        }
+
+        .page-type-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .page-type-desc {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        /* Canvas */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #fafafa;
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0px 0px;
+        }
+
+        .canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: grab;
+            transform-origin: 0 0;
+        }
+
+        .canvas.dragging {
+            cursor: grabbing;
+        }
+
+        .canvas::before {
+            content: '';
+            position: absolute;
+            top: -10000px;
+            left: -10000px;
+            width: 20000px;
+            height: 20000px;
+            z-index: 0;
+        }
+
+        .connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5000px;
+            height: 5000px;
+            pointer-events: none;
+            z-index: 1;
+            overflow: visible;
+        }
+
+        .canvas-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 100;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-btn:hover {
+            background: #f5f5f5;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .zoom-level {
+            width: 40px;
+            height: 30px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+
+        .canvas-btn {
+            padding: 10px 15px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .canvas-btn:hover {
+            background: #f5f5f5;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Page Nodes */
+        .page-node {
+            position: absolute;
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 180px;
+            cursor: move;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .page-node:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border-color: #2196f3;
+        }
+
+        .page-node.selected {
+            border-color: #2196f3;
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
+        }
+
+        .page-node-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .page-node-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .page-node-title {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .page-node-path {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .page-node-status {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .page-node-status.new {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .page-node-status.existing {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .page-node-actions {
+            display: flex;
+            gap: 5px;
+            padding-top: 8px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .node-action-btn {
+            flex: 1;
+            padding: 6px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .node-action-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .connection-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #2196f3;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: crosshair;
+            transition: all 0.2s;
+        }
+
+        .connection-point:hover {
+            width: 16px;
+            height: 16px;
+            margin: -2px;
+        }
+
+        .connection-point.top { top: -6px; left: 50%; transform: translateX(-50%); }
+        .connection-point.bottom { bottom: -6px; left: 50%; transform: translateX(-50%); }
+        .connection-point.left { left: -6px; top: 50%; transform: translateY(-50%); }
+        .connection-point.right { right: -6px; top: 50%; transform: translateY(-50%); }
+
+        /* SVG for connections */
+        .connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5000px;
+            height: 5000px;
+            pointer-events: none;
+            z-index: 1;
+            overflow: visible;
+        }
+
+        .connection-line {
+            stroke: #2196f3;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .connection-add-btn {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: #2196f3;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 15;
+            pointer-events: all;
+        }
+
+        .connection-add-btn:hover {
+            background: #1976d2;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+
+        .connection-add-btn:active {
+            transform: scale(0.95);
+        }
+            stroke: #1976d2;
+        }
+
+        /* Properties Panel */
+        .properties-panel {
+            width: 320px;
+            background: #fff;
+            border-left: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .properties-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .properties-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .properties-close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .properties-close-btn:hover {
+            background: #f5f5f5;
+            color: #1a1a1a;
+        }
+
+        .properties-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .properties-empty {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .url-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .url-prefix {
+            padding: 10px 12px;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+            font-size: 13px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .url-input-group .form-input {
+            border-radius: 0 4px 4px 0;
+            flex: 1;
+        }
+
+        .btn-delete {
+            width: 100%;
+            padding: 10px;
+            background: #f44336;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        /* Add Page Modal */
+        .add-page-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .add-page-modal.active {
+            display: flex;
+        }
+
+        .add-page-menu {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            min-width: 280px;
+        }
+
+        .add-page-menu h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+        }
+
+        .add-page-option {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .add-page-option:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: translateX(3px);
+        }
+
+        .color-picker-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 40px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-header">
+                <h1>Website Mapper</h1>
+                <p>Drag & drop to create your sitemap</p>
+            </div>
+            
+            <div class="toolbar-section">
+                <h3>Page Types</h3>
+                <div class="page-type" draggable="true" data-type="home">
+                    <div class="page-node-icon" style="background: #e3f2fd; color: #2196f3;">🏠</div>
+                    <div class="page-type-info">
+                        <div class="page-type-name">Home Page</div>
+                        <div class="page-type-desc">Main landing page</div>
+                    </div>
+                </div>
+                
+                <div class="page-type" draggable="true" data-type="service">
+                    <div class="page-node-icon" style="background: #f3e5f5; color: #9c27b0;">🎯</div>
+                    <div class="page-type-info">
+                        <div class="page-type-name">Service Line Page</div>
+                        <div class="page-type-desc">Main service category</div>
+                    </div>
+                </div>
+                
+                <div class="page-type" draggable="true" data-type="subservice">
+                    <div class="page-node-icon" style="background: #ede7f6; color: #673ab7;">📊</div>
+                    <div class="page-type-info">
+                        <div class="page-type-name">Sub-Service Line Page</div>
+                        <div class="page-type-desc">Service subcategory</div>
+                    </div>
+                </div>
+                
+                <div class="page-type" draggable="true" data-type="property">
+                    <div class="page-node-icon" style="background: #fff3e0; color: #ff9800;">🏢</div>
+                    <div class="page-type-info">
+                        <div class="page-type-name">Property Listings</div>
+                        <div class="page-type-desc">Property showcase</div>
+                    </div>
+                </div>
+                
+                <div class="page-type" draggable="true" data-type="content">
+                    <div class="page-node-icon" style="background: #e8f5e9; color: #4caf50;">📄</div>
+                    <div class="page-type-info">
+                        <div class="page-type-name">Content Page</div>
+                        <div class="page-type-desc">Standard page</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas-container">
+            <div class="canvas" id="canvas">
+                <svg class="connections-svg" id="connectionsSvg">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#2196f3" />
+                        </marker>
+                    </defs>
+                    <g id="connections"></g>
+                </svg>
+            </div>
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="app.zoomIn()">+</button>
+                <div class="zoom-level" id="zoomLevel">100%</div>
+                <button class="zoom-btn" onclick="app.zoomOut()">−</button>
+            </div>
+            <div class="canvas-controls">
+                <button class="canvas-btn" onclick="app.resetZoom()">Reset View</button>
+                <button class="canvas-btn" onclick="app.autoLayout()">Auto Layout</button>
+                <button class="canvas-btn" onclick="app.clearAutoSave()">New Project</button>
+                <button class="canvas-btn" onclick="app.importData()">Import JSON</button>
+                <button class="canvas-btn" onclick="app.exportData()">Download JSON</button>
+                <button class="canvas-btn" onclick="app.copyProjectData()">Copy JSON</button>
+            </div>
+        </div>
+
+        <!-- Properties Panel -->
+        <div class="properties-panel">
+            <div class="properties-header">
+                <h2>Properties</h2>
+                <button class="properties-close-btn" onclick="app.closeProperties()" title="Close">×</button>
+            </div>
+            <div class="properties-content" id="properties">
+                <div class="properties-empty">
+                    Select a page to edit its properties
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Page Modal -->
+    <div class="add-page-modal" id="addPageModal">
+        <div class="add-page-menu">
+            <h3>Insert Page</h3>
+            <div class="add-page-option" onclick="app.insertPageBetween('home')">
+                <div class="page-node-icon" style="background: #e3f2fd; color: #2196f3;">🏠</div>
+                <span>Home Page</span>
+            </div>
+            <div class="add-page-option" onclick="app.insertPageBetween('service')">
+                <div class="page-node-icon" style="background: #f3e5f5; color: #9c27b0;">🎯</div>
+                <span>Service Line Page</span>
+            </div>
+            <div class="add-page-option" onclick="app.insertPageBetween('subservice')">
+                <div class="page-node-icon" style="background: #ede7f6; color: #673ab7;">📊</div>
+                <span>Sub-Service Line Page</span>
+            </div>
+            <div class="add-page-option" onclick="app.insertPageBetween('property')">
+                <div class="page-node-icon" style="background: #fff3e0; color: #ff9800;">🏢</div>
+                <span>Property Listings</span>
+            </div>
+            <div class="add-page-option" onclick="app.insertPageBetween('content')">
+                <div class="page-node-icon" style="background: #e8f5e9; color: #4caf50;">📄</div>
+                <span>Content Page</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            nodes: [],
+            connections: [],
+            selectedNode: null,
+            draggedNode: null,
+            isConnecting: false,
+            connectionStart: null,
+            canvasPan: { x: 0, y: 0 },
+            isPanning: false,
+            panStart: { x: 0, y: 0 },
+            nodeIdCounter: 0,
+            zoomScale: 1,
+            gridSize: 20,
+            insertingBetweenConnection: null,
+
+            init() {
+                this.setupEventListeners();
+                this.loadFromLocalStorage();
+                
+                // Close modal when clicking outside
+                document.getElementById('addPageModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'addPageModal') {
+                        e.target.classList.remove('active');
+                        this.insertingBetweenConnection = null;
+                    }
+                });
+
+                // Auto-save every 2 seconds if there are changes
+                setInterval(() => this.autoSave(), 2000);
+            },
+
+            loadFromLocalStorage() {
+                try {
+                    const savedData = localStorage.getItem('websiteMapperProject');
+                    if (savedData) {
+                        const data = JSON.parse(savedData);
+                        
+                        // Load nodes
+                        this.nodes = data.nodes || [];
+                        this.nodeIdCounter = Math.max(...this.nodes.map(n => n.id), 0);
+                        
+                        // Render all nodes
+                        this.nodes.forEach(node => {
+                            this.renderNode(node);
+                        });
+
+                        // Load connections
+                        this.connections = data.connections || [];
+                        this.updateConnections();
+                        
+                        console.log('Project loaded from auto-save');
+                    } else {
+                        // No saved data, add sample node
+                        this.addSampleNode();
+                    }
+                } catch (error) {
+                    console.error('Error loading auto-save:', error);
+                    this.addSampleNode();
+                }
+            },
+
+            autoSave() {
+                try {
+                    const data = {
+                        nodes: this.nodes,
+                        connections: this.connections,
+                        version: '1.0',
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem('websiteMapperProject', JSON.stringify(data));
+                    
+                    // Update save indicator
+                    this.updateSaveIndicator();
+                } catch (error) {
+                    console.error('Error auto-saving:', error);
+                }
+            },
+
+            updateSaveIndicator() {
+                let indicator = document.getElementById('saveIndicator');
+                if (!indicator) {
+                    indicator = document.createElement('div');
+                    indicator.id = 'saveIndicator';
+                    indicator.style.position = 'fixed';
+                    indicator.style.top = '20px';
+                    indicator.style.right = '20px';
+                    indicator.style.padding = '8px 16px';
+                    indicator.style.background = '#4caf50';
+                    indicator.style.color = '#fff';
+                    indicator.style.borderRadius = '4px';
+                    indicator.style.fontSize = '12px';
+                    indicator.style.zIndex = '2000';
+                    indicator.style.opacity = '0';
+                    indicator.style.transition = 'opacity 0.3s';
+                    document.body.appendChild(indicator);
+                }
+                
+                indicator.textContent = '✓ Auto-saved';
+                indicator.style.opacity = '1';
+                
+                setTimeout(() => {
+                    indicator.style.opacity = '0';
+                }, 2000);
+            },
+
+            clearAutoSave() {
+                if (confirm('This will clear your auto-saved project. Continue?')) {
+                    localStorage.removeItem('websiteMapperProject');
+                    location.reload();
+                }
+            },
+
+            setupEventListeners() {
+                const canvas = document.getElementById('canvas');
+                
+                // Drag and drop from toolbar
+                document.querySelectorAll('.page-type').forEach(type => {
+                    type.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('pageType', e.currentTarget.dataset.type);
+                    });
+                });
+
+                canvas.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                canvas.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const pageType = e.dataTransfer.getData('pageType');
+                    if (pageType) {
+                        const rect = canvas.getBoundingClientRect();
+                        const x = e.clientX - rect.left - this.canvasPan.x;
+                        const y = e.clientY - rect.top - this.canvasPan.y;
+                        this.addNode(pageType, x, y);
+                    }
+                });
+
+                // Canvas panning
+                canvas.addEventListener('mousedown', (e) => {
+                    // Check if we're clicking on empty space (not on a node or button)
+                    const isNode = e.target.closest('.page-node');
+                    const isButton = e.target.closest('button');
+                    const isInput = e.target.closest('input, textarea, select');
+                    
+                    if (!isNode && !isButton && !isInput && !this.isConnecting) {
+                        this.isPanning = true;
+                        this.panStart = { x: e.clientX - this.canvasPan.x, y: e.clientY - this.canvasPan.y };
+                        canvas.classList.add('dragging');
+                        e.preventDefault();
+                    }
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (this.isPanning) {
+                        this.canvasPan.x = e.clientX - this.panStart.x;
+                        this.canvasPan.y = e.clientY - this.panStart.y;
+                        this.updateCanvasTransform();
+                        e.preventDefault();
+                    }
+                });
+
+                document.addEventListener('mouseup', (e) => {
+                    if (this.isPanning) {
+                        this.isPanning = false;
+                        canvas.classList.remove('dragging');
+                    }
+                });
+            },
+
+            updateCanvasTransform() {
+                const canvas = document.getElementById('canvas');
+                const canvasContainer = canvas.parentElement;
+                canvas.style.transform = `translate(${this.canvasPan.x}px, ${this.canvasPan.y}px) scale(${this.zoomScale})`;
+                
+                // Update grid background position to move with pan
+                const gridSize = this.gridSize * this.zoomScale;
+                canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+                canvasContainer.style.backgroundPosition = `${this.canvasPan.x}px ${this.canvasPan.y}px`;
+            },
+
+            snapToGrid(value) {
+                return Math.round(value / this.gridSize) * this.gridSize;
+            },
+
+            addNode(type, x, y) {
+                const nodeConfig = this.getNodeConfig(type);
+                const node = {
+                    id: ++this.nodeIdCounter,
+                    type: type,
+                    x: this.snapToGrid(x),
+                    y: this.snapToGrid(y),
+                    title: nodeConfig.title,
+                    path: nodeConfig.path,
+                    icon: nodeConfig.icon,
+                    color: nodeConfig.color,
+                    description: '',
+                    status: 'new'
+                };
+
+                this.nodes.push(node);
+                this.renderNode(node);
+            },
+
+            getNodeConfig(type) {
+                const configs = {
+                    home: { title: 'Home', path: '', icon: '🏠', color: '#e3f2fd' },
+                    service: { title: 'Service Line', path: 'service', icon: '🎯', color: '#f3e5f5' },
+                    subservice: { title: 'Sub-Service Line', path: 'sub-service', icon: '📊', color: '#ede7f6' },
+                    property: { title: 'Property Listings', path: 'properties', icon: '🏢', color: '#fff3e0' },
+                    content: { title: 'Content Page', path: 'content', icon: '📄', color: '#e8f5e9' }
+                };
+                return configs[type] || configs.content;
+            },
+
+            renderNode(node) {
+                const canvas = document.getElementById('canvas');
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'page-node';
+                nodeEl.dataset.nodeId = node.id;
+                nodeEl.style.left = node.x + 'px';
+                nodeEl.style.top = node.y + 'px';
+
+                const statusClass = node.status === 'new' ? 'new' : 'existing';
+                const statusText = node.status === 'new' ? 'New Page' : 'Existing Page';
+
+                nodeEl.innerHTML = `
+                    <div class="connection-point top" data-point="top" data-node-id="${node.id}"></div>
+                    <div class="connection-point bottom" data-point="bottom" data-node-id="${node.id}"></div>
+                    <div class="connection-point left" data-point="left" data-node-id="${node.id}"></div>
+                    <div class="connection-point right" data-point="right" data-node-id="${node.id}"></div>
+                    
+                    <div class="page-node-header">
+                        <div class="page-node-icon" style="background: ${node.color};">${node.icon}</div>
+                        <div class="page-node-title">${node.title}</div>
+                    </div>
+                    <div class="page-node-status ${statusClass}">${statusText}</div>
+                    <div class="page-node-actions">
+                        <button class="node-action-btn" onclick="app.selectNode(${node.id})">Edit</button>
+                        <button class="node-action-btn" onclick="app.deleteNode(${node.id})">Delete</button>
+                    </div>
+                `;
+
+                // Node dragging
+                let isDragging = false;
+                let dragOffset = { x: 0, y: 0 };
+                let hasMoved = false;
+
+                nodeEl.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('connection-point')) {
+                        return;
+                    }
+                    if (e.target.closest('.node-action-btn')) {
+                        return;
+                    }
+                    
+                    isDragging = true;
+                    hasMoved = false;
+                    dragOffset = {
+                        x: e.clientX / this.zoomScale - node.x - this.canvasPan.x / this.zoomScale,
+                        y: e.clientY / this.zoomScale - node.y - this.canvasPan.y / this.zoomScale
+                    };
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        hasMoved = true;
+                        const newX = e.clientX / this.zoomScale - dragOffset.x - this.canvasPan.x / this.zoomScale;
+                        const newY = e.clientY / this.zoomScale - dragOffset.y - this.canvasPan.y / this.zoomScale;
+                        node.x = this.snapToGrid(newX);
+                        node.y = this.snapToGrid(newY);
+                        nodeEl.style.left = node.x + 'px';
+                        nodeEl.style.top = node.y + 'px';
+                        this.updateConnections();
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isDragging && !hasMoved) {
+                        // Node was clicked but not dragged - open properties
+                        this.selectNode(node.id);
+                    }
+                    isDragging = false;
+                    hasMoved = false;
+                });
+
+                // Connection points
+                nodeEl.querySelectorAll('.connection-point').forEach(point => {
+                    point.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        this.startConnection(node.id, e.target.dataset.point);
+                    });
+                });
+
+                canvas.appendChild(nodeEl);
+            },
+
+            startConnection(nodeId, point) {
+                this.isConnecting = true;
+                this.connectionStart = { nodeId, point };
+                
+                const canvas = document.getElementById('canvas');
+                const tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                tempLine.setAttribute('class', 'connection-line');
+                tempLine.setAttribute('id', 'temp-connection');
+                tempLine.setAttribute('stroke-dasharray', '5,5');
+                document.getElementById('connections').appendChild(tempLine);
+
+                const startNode = this.nodes.find(n => n.id === nodeId);
+                const startPos = this.getConnectionPointPosition(startNode, point);
+
+                const handleMouseMove = (e) => {
+                    const canvasContainer = canvas.parentElement;
+                    const rect = canvasContainer.getBoundingClientRect();
+                    
+                    // Calculate mouse position in canvas coordinates accounting for zoom and pan
+                    const mouseX = (e.clientX - rect.left - this.canvasPan.x) / this.zoomScale;
+                    const mouseY = (e.clientY - rect.top - this.canvasPan.y) / this.zoomScale;
+                    
+                    const d = `M ${startPos.x} ${startPos.y} L ${mouseX} ${mouseY}`;
+                    tempLine.setAttribute('d', d);
+                };
+
+                const handleMouseUp = (e) => {
+                    const tempLineEl = document.getElementById('temp-connection');
+                    if (tempLineEl) tempLineEl.remove();
+
+                    const target = e.target.closest('.connection-point');
+                    if (target && this.connectionStart) {
+                        const endNodeId = parseInt(target.dataset.nodeId);
+                        const endPoint = target.dataset.point;
+                        if (endNodeId !== this.connectionStart.nodeId) {
+                            this.addConnection(
+                                this.connectionStart.nodeId, 
+                                this.connectionStart.point,
+                                endNodeId,
+                                endPoint
+                            );
+                        }
+                    }
+                    this.isConnecting = false;
+                    this.connectionStart = null;
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                };
+
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            },
+
+            getConnectionPointPosition(node, point) {
+                // Get actual node element to measure real dimensions
+                const nodeEl = document.querySelector(`[data-node-id="${node.id}"]`);
+                const nodeWidth = nodeEl ? nodeEl.offsetWidth : 180;
+                const nodeHeight = nodeEl ? nodeEl.offsetHeight : 145;
+                
+                switch(point) {
+                    case 'top':
+                        return { x: node.x + nodeWidth / 2, y: node.y };
+                    case 'bottom':
+                        return { x: node.x + nodeWidth / 2, y: node.y + nodeHeight };
+                    case 'left':
+                        return { x: node.x, y: node.y + nodeHeight / 2 };
+                    case 'right':
+                        return { x: node.x + nodeWidth, y: node.y + nodeHeight / 2 };
+                    default:
+                        return { x: node.x + nodeWidth / 2, y: node.y + nodeHeight / 2 };
+                }
+            },
+
+            addConnection(fromId, fromPoint, toId, toPoint) {
+                const exists = this.connections.some(c => 
+                    c.from === fromId && c.to === toId
+                );
+                if (!exists) {
+                    this.connections.push({ 
+                        from: fromId, 
+                        fromPoint: fromPoint,
+                        to: toId,
+                        toPoint: toPoint
+                    });
+                    this.updateConnections();
+                }
+            },
+
+            updateConnections() {
+                const svg = document.getElementById('connections');
+                svg.innerHTML = '';
+
+                // Remove all existing add buttons
+                document.querySelectorAll('.connection-add-btn').forEach(btn => btn.remove());
+
+                this.connections.forEach((conn, index) => {
+                    const fromNode = this.nodes.find(n => n.id === conn.from);
+                    const toNode = this.nodes.find(n => n.id === conn.to);
+                    
+                    if (fromNode && toNode) {
+                        const fromPos = this.getConnectionPointPosition(fromNode, conn.fromPoint);
+                        const toPos = this.getConnectionPointPosition(toNode, conn.toPoint);
+
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        
+                        // Create smooth bezier curve
+                        const dx = toPos.x - fromPos.x;
+                        const dy = toPos.y - fromPos.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const controlOffset = Math.min(distance * 0.5, 100);
+
+                        let d;
+                        if (conn.fromPoint === 'bottom' && conn.toPoint === 'top') {
+                            d = `M ${fromPos.x} ${fromPos.y} C ${fromPos.x} ${fromPos.y + controlOffset}, ${toPos.x} ${toPos.y - controlOffset}, ${toPos.x} ${toPos.y}`;
+                        } else if (conn.fromPoint === 'right' && conn.toPoint === 'left') {
+                            d = `M ${fromPos.x} ${fromPos.y} C ${fromPos.x + controlOffset} ${fromPos.y}, ${toPos.x - controlOffset} ${toPos.y}, ${toPos.x} ${toPos.y}`;
+                        } else if (conn.fromPoint === 'top' && conn.toPoint === 'bottom') {
+                            d = `M ${fromPos.x} ${fromPos.y} C ${fromPos.x} ${fromPos.y - controlOffset}, ${toPos.x} ${toPos.y + controlOffset}, ${toPos.x} ${toPos.y}`;
+                        } else if (conn.fromPoint === 'left' && conn.toPoint === 'right') {
+                            d = `M ${fromPos.x} ${fromPos.y} C ${fromPos.x - controlOffset} ${fromPos.y}, ${toPos.x + controlOffset} ${toPos.y}, ${toPos.x} ${toPos.y}`;
+                        } else {
+                            // Default bezier for mixed directions
+                            const cpx1 = fromPos.x + (dx * 0.5);
+                            const cpy1 = fromPos.y;
+                            const cpx2 = toPos.x - (dx * 0.5);
+                            const cpy2 = toPos.y;
+                            d = `M ${fromPos.x} ${fromPos.y} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${toPos.x} ${toPos.y}`;
+                        }
+
+                        path.setAttribute('d', d);
+                        path.setAttribute('class', 'connection-line');
+                        svg.appendChild(path);
+
+                        // Add plus button at midpoint
+                        this.addConnectionPlusButton(fromPos, toPos, index, conn);
+                    }
+                });
+            },
+
+            addConnectionPlusButton(fromPos, toPos, connectionIndex, connection) {
+                const canvas = document.getElementById('canvas');
+                
+                // Calculate midpoint on the bezier curve (approximate)
+                const midX = (fromPos.x + toPos.x) / 2;
+                const midY = (fromPos.y + toPos.y) / 2;
+
+                const plusBtn = document.createElement('div');
+                plusBtn.className = 'connection-add-btn';
+                plusBtn.innerHTML = '+';
+                plusBtn.style.left = (midX - 14) + 'px';
+                plusBtn.style.top = (midY - 14) + 'px';
+                
+                plusBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.showAddPageModal(connectionIndex);
+                });
+
+                canvas.appendChild(plusBtn);
+            },
+
+            showAddPageModal(connectionIndex) {
+                this.insertingBetweenConnection = connectionIndex;
+                const modal = document.getElementById('addPageModal');
+                modal.classList.add('active');
+            },
+
+            insertPageBetween(pageType) {
+                const modal = document.getElementById('addPageModal');
+                modal.classList.remove('active');
+
+                if (this.insertingBetweenConnection === null) return;
+
+                const conn = this.connections[this.insertingBetweenConnection];
+                const fromNode = this.nodes.find(n => n.id === conn.from);
+                const toNode = this.nodes.find(n => n.id === conn.to);
+
+                // Create new node between the two nodes
+                const newX = (fromNode.x + toNode.x) / 2;
+                const newY = (fromNode.y + toNode.y) / 2;
+                
+                const nodeConfig = this.getNodeConfig(pageType);
+                const newNode = {
+                    id: ++this.nodeIdCounter,
+                    type: pageType,
+                    x: this.snapToGrid(newX),
+                    y: this.snapToGrid(newY),
+                    title: nodeConfig.title,
+                    path: nodeConfig.path,
+                    icon: nodeConfig.icon,
+                    color: nodeConfig.color,
+                    description: '',
+                    status: 'new'
+                };
+
+                this.nodes.push(newNode);
+                this.renderNode(newNode);
+
+                // Remove old connection
+                this.connections.splice(this.insertingBetweenConnection, 1);
+
+                // Determine connection orientation based on original connection points
+                const isHorizontal = (conn.fromPoint === 'left' || conn.fromPoint === 'right') && 
+                                    (conn.toPoint === 'left' || conn.toPoint === 'right');
+                
+                if (isHorizontal) {
+                    // Horizontal connection: connect left-to-right
+                    if (conn.fromPoint === 'right') {
+                        this.addConnection(conn.from, 'right', newNode.id, 'left');
+                        this.addConnection(newNode.id, 'right', conn.to, conn.toPoint);
+                    } else {
+                        this.addConnection(conn.from, 'left', newNode.id, 'right');
+                        this.addConnection(newNode.id, 'left', conn.to, conn.toPoint);
+                    }
+                } else {
+                    // Vertical connection: connect top-to-bottom
+                    this.addConnection(conn.from, conn.fromPoint, newNode.id, 'top');
+                    this.addConnection(newNode.id, 'bottom', conn.to, conn.toPoint);
+                }
+
+                this.insertingBetweenConnection = null;
+
+                // Auto-layout after insertion
+                setTimeout(() => this.autoLayout(), 100);
+            },
+
+            selectNode(nodeId) {
+                this.selectedNode = this.nodes.find(n => n.id === nodeId);
+                
+                // Update visual selection
+                document.querySelectorAll('.page-node').forEach(n => n.classList.remove('selected'));
+                const nodeEl = document.querySelector(`[data-node-id="${nodeId}"]`);
+                if (nodeEl) nodeEl.classList.add('selected');
+
+                this.renderProperties();
+            },
+
+            renderProperties() {
+                const panel = document.getElementById('properties');
+                if (!this.selectedNode) {
+                    panel.innerHTML = '<div class="properties-empty">Select a page to edit its properties</div>';
+                    return;
+                }
+
+                const node = this.selectedNode;
+                panel.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Page Title</label>
+                        <input type="text" class="form-input" value="${node.title}" 
+                            onchange="app.updateNodeProperty('title', this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">URL Path</label>
+                        <div class="url-input-group">
+                            <span class="url-prefix">colliers.com/en-gb/</span>
+                            <input type="text" class="form-input" value="${node.path}" 
+                                onchange="app.updateNodeProperty('path', this.value)">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Page Type</label>
+                        <select class="form-select" onchange="app.updateNodeProperty('type', this.value)">
+                            <option value="home" ${node.type === 'home' ? 'selected' : ''}>Home Page</option>
+                            <option value="service" ${node.type === 'service' ? 'selected' : ''}>Service Line Page</option>
+                            <option value="subservice" ${node.type === 'subservice' ? 'selected' : ''}>Sub-Service Line Page</option>
+                            <option value="property" ${node.type === 'property' ? 'selected' : ''}>Property Listings</option>
+                            <option value="content" ${node.type === 'content' ? 'selected' : ''}>Content Page</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Page Status</label>
+                        <select class="form-select" onchange="app.updateNodeProperty('status', this.value)">
+                            <option value="new" ${node.status === 'new' ? 'selected' : ''}>New Page</option>
+                            <option value="existing" ${node.status === 'existing' ? 'selected' : ''}>Existing Page</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" 
+                            onchange="app.updateNodeProperty('description', this.value)">${node.description}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button class="btn-delete" onclick="app.deleteNode(${node.id})">Delete Page</button>
+                    </div>
+                `;
+            },
+
+            closeProperties() {
+                this.selectedNode = null;
+                document.querySelectorAll('.page-node').forEach(n => n.classList.remove('selected'));
+                this.renderProperties();
+            },
+
+            updateNodeProperty(property, value) {
+                if (this.selectedNode) {
+                    this.selectedNode[property] = value;
+                    
+                    // Update visual if title, type, or status changed
+                    if (property === 'title' || property === 'type' || property === 'status') {
+                        const nodeEl = document.querySelector(`[data-node-id="${this.selectedNode.id}"]`);
+                        if (nodeEl) {
+                            if (property === 'type') {
+                                const config = this.getNodeConfig(value);
+                                this.selectedNode.icon = config.icon;
+                                this.selectedNode.color = config.color;
+                                nodeEl.querySelector('.page-node-icon').textContent = this.selectedNode.icon;
+                                nodeEl.querySelector('.page-node-icon').style.background = this.selectedNode.color;
+                            }
+                            if (property === 'title') {
+                                nodeEl.querySelector('.page-node-title').textContent = this.selectedNode.title;
+                            }
+                            if (property === 'status') {
+                                const statusEl = nodeEl.querySelector('.page-node-status');
+                                statusEl.className = 'page-node-status ' + (value === 'new' ? 'new' : 'existing');
+                                statusEl.textContent = value === 'new' ? 'New Page' : 'Existing Page';
+                            }
+                        }
+                    }
+                }
+            },
+
+            deleteNode(nodeId) {
+                this.nodes = this.nodes.filter(n => n.id !== nodeId);
+                this.connections = this.connections.filter(c => c.from !== nodeId && c.to !== nodeId);
+                
+                const nodeEl = document.querySelector(`[data-node-id="${nodeId}"]`);
+                if (nodeEl) nodeEl.remove();
+                
+                if (this.selectedNode && this.selectedNode.id === nodeId) {
+                    this.selectedNode = null;
+                    this.renderProperties();
+                }
+                
+                this.updateConnections();
+            },
+
+            addSampleNode() {
+                this.addNode('home', 400, 100);
+            },
+
+            resetZoom() {
+                this.canvasPan = { x: 0, y: 0 };
+                this.zoomScale = 1;
+                this.updateCanvasTransform();
+                this.updateZoomDisplay();
+            },
+
+            zoomIn() {
+                if (this.zoomScale < 2) {
+                    this.zoomScale = Math.min(2, this.zoomScale + 0.1);
+                    this.updateCanvasTransform();
+                    this.updateZoomDisplay();
+                }
+            },
+
+            zoomOut() {
+                if (this.zoomScale > 0.3) {
+                    this.zoomScale = Math.max(0.3, this.zoomScale - 0.1);
+                    this.updateCanvasTransform();
+                    this.updateZoomDisplay();
+                }
+            },
+
+            updateZoomDisplay() {
+                const zoomLevel = document.getElementById('zoomLevel');
+                if (zoomLevel) {
+                    zoomLevel.textContent = Math.round(this.zoomScale * 100) + '%';
+                }
+            },
+
+            autoLayout() {
+                if (this.nodes.length === 0) return;
+
+                // Build graph structure
+                const graph = {};
+                const inDegree = {};
+                const connectionTypes = {}; // Track if connections are horizontal
+                
+                this.nodes.forEach(node => {
+                    graph[node.id] = [];
+                    inDegree[node.id] = 0;
+                    connectionTypes[node.id] = [];
+                });
+
+                this.connections.forEach(conn => {
+                    graph[conn.from].push(conn.to);
+                    inDegree[conn.to]++;
+                    
+                    // Detect if connection is horizontal
+                    const isHorizontal = (conn.fromPoint === 'left' || conn.fromPoint === 'right') && 
+                                        (conn.toPoint === 'left' || conn.toPoint === 'right');
+                    
+                    connectionTypes[conn.from].push({
+                        to: conn.to,
+                        isHorizontal: isHorizontal,
+                        direction: conn.fromPoint
+                    });
+                });
+
+                // Find root nodes (nodes with no incoming connections)
+                const roots = this.nodes.filter(node => inDegree[node.id] === 0);
+                
+                if (roots.length === 0 && this.nodes.length > 0) {
+                    roots.push(this.nodes[0]);
+                }
+
+                // Layout parameters
+                const levelHeight = 200;
+                const horizontalSpacing = 250;
+                const verticalSpacing = 250;
+                const startX = 400;
+                const startY = 100;
+
+                // Store node positions
+                const nodePositions = {};
+                const visited = new Set();
+                const queue = [];
+
+                // Initialize roots
+                roots.forEach((root, index) => {
+                    nodePositions[root.id] = {
+                        x: startX + (index * verticalSpacing),
+                        y: startY
+                    };
+                    queue.push(root.id);
+                    visited.add(root.id);
+                });
+
+                // BFS with proper horizontal and vertical spacing
+                while (queue.length > 0) {
+                    const nodeId = queue.shift();
+                    const currentPos = nodePositions[nodeId];
+                    
+                    const connections = connectionTypes[nodeId];
+                    
+                    connections.forEach((conn, index) => {
+                        if (!visited.has(conn.to)) {
+                            visited.add(conn.to);
+                            
+                            if (conn.isHorizontal) {
+                                // Place horizontally at same level
+                                if (conn.direction === 'right') {
+                                    nodePositions[conn.to] = {
+                                        x: currentPos.x + horizontalSpacing,
+                                        y: currentPos.y
+                                    };
+                                } else { // left
+                                    nodePositions[conn.to] = {
+                                        x: currentPos.x - horizontalSpacing,
+                                        y: currentPos.y
+                                    };
+                                }
+                            } else {
+                                // Place vertically below
+                                nodePositions[conn.to] = {
+                                    x: currentPos.x + (index * verticalSpacing / 2),
+                                    y: currentPos.y + levelHeight
+                                };
+                            }
+                            
+                            queue.push(conn.to);
+                        }
+                    });
+                }
+
+                // Apply positions to nodes
+                Object.keys(nodePositions).forEach(nodeId => {
+                    const node = this.nodes.find(n => n.id == nodeId);
+                    if (node) {
+                        node.x = this.snapToGrid(nodePositions[nodeId].x);
+                        node.y = this.snapToGrid(nodePositions[nodeId].y);
+                        
+                        const nodeEl = document.querySelector(`[data-node-id="${nodeId}"]`);
+                        if (nodeEl) {
+                            nodeEl.style.left = node.x + 'px';
+                            nodeEl.style.top = node.y + 'px';
+                        }
+                    }
+                });
+
+                this.updateConnections();
+            },
+
+            clearCanvas() {
+                if (confirm('Are you sure you want to clear all pages?')) {
+                    this.nodes = [];
+                    this.connections = [];
+                    this.selectedNode = null;
+                    const canvas = document.getElementById('canvas');
+                    const svg = document.getElementById('connectionsSvg');
+                    // Remove all nodes but keep the SVG
+                    Array.from(canvas.children).forEach(child => {
+                        if (child.id !== 'connectionsSvg') {
+                            child.remove();
+                        }
+                    });
+                    this.updateConnections();
+                    this.renderProperties();
+                }
+            },
+
+            exportData() {
+                const data = {
+                    nodes: this.nodes,
+                    connections: this.connections,
+                    version: '1.0',
+                    exportedAt: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                
+                // Try to download file
+                try {
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `website-map-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    // If download fails, copy to clipboard instead
+                    this.copyToClipboard(json);
+                }
+            },
+
+            copyToClipboard(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('Project data copied to clipboard! You can paste it into a text file and save it as .json');
+                    }).catch(() => {
+                        this.fallbackCopy(text);
+                    });
+                } else {
+                    this.fallbackCopy(text);
+                }
+            },
+
+            fallbackCopy(text) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Project data copied to clipboard! You can paste it into a text file and save it as .json');
+                } catch (err) {
+                    alert('Could not export. Please try using a different browser or copy manually from the console.');
+                    console.log('Export data:', text);
+                }
+                document.body.removeChild(textArea);
+            },
+
+            copyProjectData() {
+                const data = {
+                    nodes: this.nodes,
+                    connections: this.connections,
+                    version: '1.0',
+                    exportedAt: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                this.copyToClipboard(json);
+            },
+
+            importData() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            
+                            // Validate data structure
+                            if (!data.nodes || !data.connections) {
+                                alert('Invalid file format. Please select a valid website map file.');
+                                return;
+                            }
+
+                            // Clear current data
+                            this.nodes = [];
+                            this.connections = [];
+                            this.selectedNode = null;
+                            
+                            // Clear canvas
+                            const canvas = document.getElementById('canvas');
+                            const svg = document.getElementById('connectionsSvg');
+                            Array.from(canvas.children).forEach(child => {
+                                if (child.id !== 'connectionsSvg') {
+                                    child.remove();
+                                }
+                            });
+
+                            // Import nodes
+                            this.nodes = data.nodes;
+                            this.nodeIdCounter = Math.max(...this.nodes.map(n => n.id), 0);
+                            
+                            // Render all nodes
+                            this.nodes.forEach(node => {
+                                this.renderNode(node);
+                            });
+
+                            // Import connections
+                            this.connections = data.connections;
+                            this.updateConnections();
+                            this.renderProperties();
+
+                            // Save to localStorage
+                            this.autoSave();
+
+                            alert('Project loaded successfully!');
+                        } catch (error) {
+                            alert('Error loading file: ' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            }
+        };
+
+        // Initialize app
+        app.init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "type": "home",
+      "x": 400,
+      "y": 100,
+      "title": "Home",
+      "path": "",
+      "icon": "🏠",
+      "color": "#e3f2fd",
+      "description": "Main landing page with hero section and featured services",
+      "status": "existing"
+    },
+    {
+      "id": 2,
+      "type": "service",
+      "x": 400,
+      "y": 300,
+      "title": "Commercial Real Estate",
+      "path": "commercial",
+      "icon": "🎯",
+      "color": "#f3e5f5",
+      "description": "Commercial property services overview",
+      "status": "existing"
+    },
+    {
+      "id": 3,
+      "type": "subservice",
+      "x": 200,
+      "y": 500,
+      "title": "Office Space",
+      "path": "commercial/office",
+      "icon": "📊",
+      "color": "#ede7f6",
+      "description": "Office space leasing and sales",
+      "status": "new"
+    },
+    {
+      "id": 4,
+      "type": "subservice",
+      "x": 600,
+      "y": 500,
+      "title": "Retail Space",
+      "path": "commercial/retail",
+      "icon": "📊",
+      "color": "#ede7f6",
+      "description": "Retail property solutions",
+      "status": "new"
+    },
+    {
+      "id": 5,
+      "type": "property",
+      "x": 200,
+      "y": 700,
+      "title": "Featured Offices",
+      "path": "properties/office",
+      "icon": "🏢",
+      "color": "#fff3e0",
+      "description": "Browse available office properties",
+      "status": "existing"
+    },
+    {
+      "id": 6,
+      "type": "content",
+      "x": 800,
+      "y": 300,
+      "title": "About Us",
+      "path": "about",
+      "icon": "📄",
+      "color": "#e8f5e9",
+      "description": "Company information and team",
+      "status": "existing"
+    },
+    {
+      "id": 7,
+      "type": "content",
+      "x": 800,
+      "y": 500,
+      "title": "Contact",
+      "path": "contact",
+      "icon": "📄",
+      "color": "#e8f5e9",
+      "description": "Contact form and office locations",
+      "status": "existing"
+    }
+  ],
+  "connections": [
+    {
+      "from": 1,
+      "fromPoint": "bottom",
+      "to": 2,
+      "toPoint": "top"
+    },
+    {
+      "from": 2,
+      "fromPoint": "bottom",
+      "to": 3,
+      "toPoint": "top"
+    },
+    {
+      "from": 2,
+      "fromPoint": "bottom",
+      "to": 4,
+      "toPoint": "top"
+    },
+    {
+      "from": 3,
+      "fromPoint": "bottom",
+      "to": 5,
+      "toPoint": "top"
+    },
+    {
+      "from": 1,
+      "fromPoint": "right",
+      "to": 6,
+      "toPoint": "left"
+    },
+    {
+      "from": 6,
+      "fromPoint": "bottom",
+      "to": 7,
+      "toPoint": "top"
+    }
+  ],
+  "version": "1.0",
+  "exportedAt": "2025-10-23T12:00:00.000Z"
+}
