@@ -147,17 +147,6 @@
             z-index: 0;
         }
 
-        .connections-svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 5000px;
-            height: 5000px;
-            pointer-events: none;
-            z-index: 1;
-            overflow: visible;
-        }
-
         .canvas-controls {
             position: absolute;
             bottom: 20px;
@@ -352,9 +341,13 @@
             left: 0;
             width: 5000px;
             height: 5000px;
-            pointer-events: none;
+            pointer-events: none;  /* Default: no events */
             z-index: 1;
             overflow: visible;
+        }
+
+        .connections-svg > g {
+            pointer-events: all;  /* But enable events on the group */
         }
 
         .connection-line {
@@ -363,24 +356,7 @@
             fill: none;
             marker-end: url(#arrowhead);
             transition: all 0.2s;
-        }
-
-        .connection-line:hover {
-            stroke: #f44336;
-            stroke-width: 3;
-            cursor: pointer;
-        }
-
-        .connection-hitbox {
-            stroke: transparent;
-            stroke-width: 20;
-            fill: none;
-            cursor: pointer;
-        }
-
-        .connection-hitbox:hover + .connection-line {
-            stroke: #f44336;
-            stroke-width: 3;
+            pointer-events: none;  /* Hitbox handles all interactions */
         }
 
         .connection-add-btn {
@@ -732,6 +708,18 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div class="add-page-modal" id="deleteConnectionModal">
+        <div class="add-page-menu" style="padding: 30px; text-align: center;">
+            <h3 style="margin-bottom: 20px; color: #f44336;">Delete Connection?</h3>
+            <p style="margin-bottom: 30px; color: #666;">Are you sure you want to delete this connection?<br>This action cannot be undone.</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="app.confirmDeleteConnection()" style="padding: 12px 24px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">Delete</button>
+                <button onclick="app.cancelDeleteConnection()" style="padding: 12px 24px; background: #e0e0e0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const app = {
             nodes: [],
@@ -747,6 +735,7 @@
             zoomScale: 1,
             gridSize: 20,
             insertingBetweenConnection: null,
+            pendingDeleteConnectionIndex: null,  // NEW: Track which connection to delete
 
             init() {
                 this.setupEventListeners();
@@ -757,6 +746,13 @@
                     if (e.target.id === 'addPageModal') {
                         e.target.classList.remove('active');
                         this.insertingBetweenConnection = null;
+                    }
+                });
+
+                // Close delete confirmation modal when clicking outside
+                document.getElementById('deleteConnectionModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'deleteConnectionModal') {
+                        this.cancelDeleteConnection();
                     }
                 });
 
@@ -872,12 +868,14 @@
 
                 // Canvas panning
                 canvas.addEventListener('mousedown', (e) => {
-                    // Check if we're clicking on empty space (not on a node or button)
+                    // Check if we're clicking on empty space (not on a node, button, or connection)
                     const isNode = e.target.closest('.page-node');
                     const isButton = e.target.closest('button');
                     const isInput = e.target.closest('input, textarea, select');
+                    const isConnection = e.target.classList && e.target.classList.contains('connection-line');
+                    const isSvgPath = e.target.tagName === 'path';
                     
-                    if (!isNode && !isButton && !isInput && !this.isConnecting) {
+                    if (!isNode && !isButton && !isInput && !isConnection && !isSvgPath && !this.isConnecting) {
                         this.isPanning = true;
                         this.panStart = { x: e.clientX - this.canvasPan.x, y: e.clientY - this.canvasPan.y };
                         canvas.classList.add('dragging');
@@ -1157,27 +1155,47 @@
                             d = `M ${fromPos.x} ${fromPos.y} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${toPos.x} ${toPos.y}`;
                         }
 
-                        // Create invisible hitbox for easier clicking
+                        // Create invisible wider hitbox for easier clicking
                         const hitbox = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         hitbox.setAttribute('d', d);
-                        hitbox.setAttribute('class', 'connection-hitbox');
-                        hitbox.setAttribute('data-connection-index', index);
+                        hitbox.setAttribute('stroke', 'transparent');
+                        hitbox.setAttribute('stroke-width', '15');  // Wide invisible clickable area
+                        hitbox.setAttribute('fill', 'none');
                         hitbox.style.cursor = 'pointer';
+                        hitbox.style.pointerEvents = 'stroke';
                         
-                        // Add click handler to delete connection
+                        // Add click handler to the invisible hitbox
                         hitbox.addEventListener('click', (e) => {
+                            console.log('Connection clicked!', index); // Debug
                             e.stopPropagation();
+                            e.preventDefault();
                             this.deleteConnection(index);
+                        });
+                        
+                        // Add mousedown to prevent panning
+                        hitbox.addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                        });
+                        
+                        // Add hover handlers to change visible line color
+                        hitbox.addEventListener('mouseenter', () => {
+                            path.setAttribute('stroke', '#f44336');
+                            path.setAttribute('stroke-width', '3');
+                        });
+                        
+                        hitbox.addEventListener('mouseleave', () => {
+                            path.setAttribute('stroke', '#2196f3');
+                            path.setAttribute('stroke-width', '2');
                         });
                         
                         svg.appendChild(hitbox);
 
-                        // Create visible path
+                        // Create the visible connection line (2px, non-interactive)
                         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('d', d);
                         path.setAttribute('class', 'connection-line');
                         path.setAttribute('data-connection-index', index);
-                        path.style.pointerEvents = 'none'; // Let hitbox handle clicks
+                        path.style.pointerEvents = 'none';  // Don't handle events, let hitbox do it
                         
                         svg.appendChild(path);
 
@@ -1188,10 +1206,27 @@
             },
 
             deleteConnection(connectionIndex) {
-                if (confirm('Delete this connection?')) {
-                    this.connections.splice(connectionIndex, 1);
+                console.log('deleteConnection called with index:', connectionIndex); // Debug
+                // Store which connection we want to delete
+                this.pendingDeleteConnectionIndex = connectionIndex;
+                // Show custom modal instead of browser confirm
+                document.getElementById('deleteConnectionModal').classList.add('active');
+            },
+
+            confirmDeleteConnection() {
+                console.log('User confirmed deletion'); // Debug
+                if (this.pendingDeleteConnectionIndex !== null) {
+                    this.connections.splice(this.pendingDeleteConnectionIndex, 1);
+                    this.pendingDeleteConnectionIndex = null;
                     this.updateConnections();
                 }
+                document.getElementById('deleteConnectionModal').classList.remove('active');
+            },
+
+            cancelDeleteConnection() {
+                console.log('User cancelled deletion'); // Debug
+                this.pendingDeleteConnectionIndex = null;
+                document.getElementById('deleteConnectionModal').classList.remove('active');
             },
 
             addConnectionPlusButton(fromPos, toPos, connectionIndex, connection) {
