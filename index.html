@@ -362,6 +362,25 @@
             stroke-width: 2;
             fill: none;
             marker-end: url(#arrowhead);
+            transition: all 0.2s;
+        }
+
+        .connection-line:hover {
+            stroke: #f44336;
+            stroke-width: 3;
+            cursor: pointer;
+        }
+
+        .connection-hitbox {
+            stroke: transparent;
+            stroke-width: 20;
+            fill: none;
+            cursor: pointer;
+        }
+
+        .connection-hitbox:hover + .connection-line {
+            stroke: #f44336;
+            stroke-width: 3;
         }
 
         .connection-add-btn {
@@ -392,8 +411,6 @@
 
         .connection-add-btn:active {
             transform: scale(0.95);
-        }
-            stroke: #1976d2;
         }
 
         /* Properties Panel */
@@ -1116,8 +1133,6 @@
                         const fromPos = this.getConnectionPointPosition(fromNode, conn.fromPoint);
                         const toPos = this.getConnectionPointPosition(toNode, conn.toPoint);
 
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        
                         // Create smooth bezier curve
                         const dx = toPos.x - fromPos.x;
                         const dy = toPos.y - fromPos.y;
@@ -1142,14 +1157,41 @@
                             d = `M ${fromPos.x} ${fromPos.y} C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${toPos.x} ${toPos.y}`;
                         }
 
+                        // Create invisible hitbox for easier clicking
+                        const hitbox = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        hitbox.setAttribute('d', d);
+                        hitbox.setAttribute('class', 'connection-hitbox');
+                        hitbox.setAttribute('data-connection-index', index);
+                        hitbox.style.cursor = 'pointer';
+                        
+                        // Add click handler to delete connection
+                        hitbox.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            this.deleteConnection(index);
+                        });
+                        
+                        svg.appendChild(hitbox);
+
+                        // Create visible path
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('d', d);
                         path.setAttribute('class', 'connection-line');
+                        path.setAttribute('data-connection-index', index);
+                        path.style.pointerEvents = 'none'; // Let hitbox handle clicks
+                        
                         svg.appendChild(path);
 
                         // Add plus button at midpoint
                         this.addConnectionPlusButton(fromPos, toPos, index, conn);
                     }
                 });
+            },
+
+            deleteConnection(connectionIndex) {
+                if (confirm('Delete this connection?')) {
+                    this.connections.splice(connectionIndex, 1);
+                    this.updateConnections();
+                }
             },
 
             addConnectionPlusButton(fromPos, toPos, connectionIndex, connection) {
@@ -1423,64 +1465,78 @@
                     roots.push(this.nodes[0]);
                 }
 
-                // Layout parameters
-                const levelHeight = 200;
-                const horizontalSpacing = 250;
-                const verticalSpacing = 250;
+                // Layout parameters - IMPROVED SPACING
+                const levelHeight = 220;  // Increased vertical spacing
+                const horizontalSpacing = 300;  // Increased horizontal spacing
+                const verticalSpacing = 300;  // Spacing between siblings
                 const startX = 400;
                 const startY = 100;
 
-                // Store node positions
+                // Store node positions and level assignments
                 const nodePositions = {};
                 const visited = new Set();
+                const levels = {};
+                
+                // Group nodes by level using BFS
                 const queue = [];
-
-                // Initialize roots
-                roots.forEach((root, index) => {
-                    nodePositions[root.id] = {
-                        x: startX + (index * verticalSpacing),
-                        y: startY
-                    };
-                    queue.push(root.id);
+                roots.forEach(root => {
+                    queue.push({ id: root.id, level: 0 });
                     visited.add(root.id);
+                    levels[0] = levels[0] || [];
+                    levels[0].push(root.id);
                 });
 
-                // BFS with proper horizontal and vertical spacing
                 while (queue.length > 0) {
-                    const nodeId = queue.shift();
-                    const currentPos = nodePositions[nodeId];
+                    const { id, level } = queue.shift();
+                    const connections = connectionTypes[id] || [];
                     
-                    const connections = connectionTypes[nodeId];
-                    
-                    connections.forEach((conn, index) => {
+                    connections.forEach(conn => {
                         if (!visited.has(conn.to)) {
                             visited.add(conn.to);
-                            
-                            if (conn.isHorizontal) {
-                                // Place horizontally at same level
-                                if (conn.direction === 'right') {
-                                    nodePositions[conn.to] = {
-                                        x: currentPos.x + horizontalSpacing,
-                                        y: currentPos.y
-                                    };
-                                } else { // left
-                                    nodePositions[conn.to] = {
-                                        x: currentPos.x - horizontalSpacing,
-                                        y: currentPos.y
-                                    };
-                                }
-                            } else {
-                                // Place vertically below
-                                nodePositions[conn.to] = {
-                                    x: currentPos.x + (index * verticalSpacing / 2),
-                                    y: currentPos.y + levelHeight
-                                };
-                            }
-                            
-                            queue.push(conn.to);
+                            const nextLevel = conn.isHorizontal ? level : level + 1;
+                            levels[nextLevel] = levels[nextLevel] || [];
+                            levels[nextLevel].push(conn.to);
+                            queue.push({ id: conn.to, level: nextLevel });
                         }
                     });
                 }
+
+                // Calculate positions for each level
+                Object.keys(levels).forEach(level => {
+                    const nodesInLevel = levels[level];
+                    const levelNum = parseInt(level);
+                    const y = startY + (levelNum * levelHeight);
+                    
+                    // Calculate total width needed for this level
+                    const totalWidth = (nodesInLevel.length - 1) * verticalSpacing;
+                    const startXForLevel = startX - (totalWidth / 2);
+                    
+                    nodesInLevel.forEach((nodeId, index) => {
+                        const x = startXForLevel + (index * verticalSpacing);
+                        nodePositions[nodeId] = { x, y };
+                    });
+                });
+
+                // Handle horizontal connections separately
+                this.connections.forEach(conn => {
+                    const isHorizontal = (conn.fromPoint === 'left' || conn.fromPoint === 'right') && 
+                                        (conn.toPoint === 'left' || conn.toPoint === 'right');
+                    
+                    if (isHorizontal && nodePositions[conn.from] && nodePositions[conn.to]) {
+                        const fromPos = nodePositions[conn.from];
+                        if (conn.fromPoint === 'right') {
+                            nodePositions[conn.to] = {
+                                x: fromPos.x + horizontalSpacing,
+                                y: fromPos.y
+                            };
+                        } else if (conn.fromPoint === 'left') {
+                            nodePositions[conn.to] = {
+                                x: fromPos.x - horizontalSpacing,
+                                y: fromPos.y
+                            };
+                        }
+                    }
+                });
 
                 // Apply positions to nodes
                 Object.keys(nodePositions).forEach(nodeId => {
