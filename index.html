@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Website Mapping Tool</title>
     <style>
+        /* Page Type Color Coding */
+        :root {
+            --home-color: #2196f3;
+            --home-bg: #e3f2fd;
+            --service-color: #9c27b0;
+            --service-bg: #f3e5f5;
+            --subservice-color: #00897b;
+            --subservice-bg: #e0f2f1;
+            --property-color: #ff9800;
+            --property-bg: #fff3e0;
+            --content-color: #4caf50;
+            --content-bg: #e8f5e9;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -290,26 +304,55 @@
             color: #1565c0;
         }
 
-        .page-node-actions {
+        .page-node-indicators {
             display: flex;
-            gap: 5px;
+            flex-direction: column;
+            gap: 6px;
             padding-top: 8px;
-            border-top: 1px solid #f0f0f0;
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
 
-        .node-action-btn {
-            flex: 1;
-            padding: 6px;
-            background: #f5f5f5;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        .node-indicator {
+            display: flex;
+            align-items: center;
             font-size: 11px;
-            transition: all 0.2s;
+            padding: 4px 6px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.6);
         }
 
-        .node-action-btn:hover {
-            background: #e0e0e0;
+        .template-indicator {
+            justify-content: space-between;
+        }
+
+        .indicator-label {
+            font-weight: 600;
+            color: #666;
+            margin-right: 6px;
+        }
+
+        .indicator-value {
+            font-weight: 600;
+        }
+
+        .template-indicator .indicator-value {
+            background: #2196f3;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+
+        .seo-indicator {
+            justify-content: center;
+        }
+
+        .seo-indicator.seo-approved .indicator-value {
+            color: #2e7d32;
+        }
+
+        .seo-indicator.seo-review .indicator-value {
+            color: #f57c00;
         }
 
         .connection-point {
@@ -598,7 +641,7 @@
             
             <div class="toolbar-section">
                 <h3>Page Types</h3>
-                <div class="page-type" draggable="true" data-type="home">
+                <div class="page-type" draggable="true" data-type="home" style="border-left: 4px solid #2196f3;">
                     <div class="page-node-icon" style="background: #e3f2fd; color: #2196f3;">🏠</div>
                     <div class="page-type-info">
                         <div class="page-type-name">Home Page</div>
@@ -606,7 +649,7 @@
                     </div>
                 </div>
                 
-                <div class="page-type" draggable="true" data-type="service">
+                <div class="page-type" draggable="true" data-type="service" style="border-left: 4px solid #9c27b0;">
                     <div class="page-node-icon" style="background: #f3e5f5; color: #9c27b0;">🎯</div>
                     <div class="page-type-info">
                         <div class="page-type-name">Service Line Page</div>
@@ -614,15 +657,15 @@
                     </div>
                 </div>
                 
-                <div class="page-type" draggable="true" data-type="subservice">
-                    <div class="page-node-icon" style="background: #ede7f6; color: #673ab7;">📊</div>
+                <div class="page-type" draggable="true" data-type="subservice" style="border-left: 4px solid #00897b;">
+                    <div class="page-node-icon" style="background: #e0f2f1; color: #00897b;">📊</div>
                     <div class="page-type-info">
                         <div class="page-type-name">Sub-Service Line Page</div>
                         <div class="page-type-desc">Service subcategory</div>
                     </div>
                 </div>
                 
-                <div class="page-type" draggable="true" data-type="property">
+                <div class="page-type" draggable="true" data-type="property" style="border-left: 4px solid #ff9800;">
                     <div class="page-node-icon" style="background: #fff3e0; color: #ff9800;">🏢</div>
                     <div class="page-type-info">
                         <div class="page-type-name">Property Listings</div>
@@ -630,7 +673,7 @@
                     </div>
                 </div>
                 
-                <div class="page-type" draggable="true" data-type="content">
+                <div class="page-type" draggable="true" data-type="content" style="border-left: 4px solid #4caf50;">
                     <div class="page-node-icon" style="background: #e8f5e9; color: #4caf50;">📄</div>
                     <div class="page-type-info">
                         <div class="page-type-name">Content Page</div>
@@ -685,23 +728,23 @@
     <div class="add-page-modal" id="addPageModal">
         <div class="add-page-menu">
             <h3>Insert Page</h3>
-            <div class="add-page-option" onclick="app.insertPageBetween('home')">
+            <div class="add-page-option" onclick="app.insertPageBetween('home')" style="border-left: 4px solid #2196f3;">
                 <div class="page-node-icon" style="background: #e3f2fd; color: #2196f3;">🏠</div>
                 <span>Home Page</span>
             </div>
-            <div class="add-page-option" onclick="app.insertPageBetween('service')">
+            <div class="add-page-option" onclick="app.insertPageBetween('service')" style="border-left: 4px solid #9c27b0;">
                 <div class="page-node-icon" style="background: #f3e5f5; color: #9c27b0;">🎯</div>
                 <span>Service Line Page</span>
             </div>
-            <div class="add-page-option" onclick="app.insertPageBetween('subservice')">
-                <div class="page-node-icon" style="background: #ede7f6; color: #673ab7;">📊</div>
+            <div class="add-page-option" onclick="app.insertPageBetween('subservice')" style="border-left: 4px solid #00897b;">
+                <div class="page-node-icon" style="background: #e0f2f1; color: #00897b;">📊</div>
                 <span>Sub-Service Line Page</span>
             </div>
-            <div class="add-page-option" onclick="app.insertPageBetween('property')">
+            <div class="add-page-option" onclick="app.insertPageBetween('property')" style="border-left: 4px solid #ff9800;">
                 <div class="page-node-icon" style="background: #fff3e0; color: #ff9800;">🏢</div>
                 <span>Property Listings</span>
             </div>
-            <div class="add-page-option" onclick="app.insertPageBetween('content')">
+            <div class="add-page-option" onclick="app.insertPageBetween('content')" style="border-left: 4px solid #4caf50;">
                 <div class="page-node-icon" style="background: #e8f5e9; color: #4caf50;">📄</div>
                 <span>Content Page</span>
             </div>
@@ -927,7 +970,11 @@
                     icon: nodeConfig.icon,
                     color: nodeConfig.color,
                     description: '',
-                    status: 'new'
+                    status: 'new',
+                    template: 'V1',
+                    seoKeywords: '',
+                    seoStatus: 'under-review',
+                    navCategory: ''
                 };
 
                 this.nodes.push(node);
@@ -938,7 +985,7 @@
                 const configs = {
                     home: { title: 'Home', path: '', icon: '🏠', color: '#e3f2fd' },
                     service: { title: 'Service Line', path: 'service', icon: '🎯', color: '#f3e5f5' },
-                    subservice: { title: 'Sub-Service Line', path: 'sub-service', icon: '📊', color: '#ede7f6' },
+                    subservice: { title: 'Sub-Service Line', path: 'sub-service', icon: '📊', color: '#e0f2f1' },
                     property: { title: 'Property Listings', path: 'properties', icon: '🏢', color: '#fff3e0' },
                     content: { title: 'Content Page', path: 'content', icon: '📄', color: '#e8f5e9' }
                 };
@@ -955,6 +1002,29 @@
 
                 const statusClass = node.status === 'new' ? 'new' : 'existing';
                 const statusText = node.status === 'new' ? 'New Page' : 'Existing Page';
+                
+                // Color coding by page type
+                const typeColors = {
+                    home: { border: '#2196f3', bg: '#e3f2fd', text: '#1565c0' },
+                    service: { border: '#9c27b0', bg: '#f3e5f5', text: '#6a1b9a' },
+                    subservice: { border: '#00897b', bg: '#e0f2f1', text: '#00695c' },
+                    property: { border: '#ff9800', bg: '#fff3e0', text: '#e65100' },
+                    content: { border: '#4caf50', bg: '#e8f5e9', text: '#2e7d32' }
+                };
+                const currentType = typeColors[node.type] || typeColors.content;
+                
+                // Apply color-coded background
+                nodeEl.style.background = currentType.bg;
+                nodeEl.style.borderColor = currentType.border;
+                nodeEl.style.borderWidth = '2px';
+                
+                // Initialize new properties if they don't exist
+                if (!node.template) node.template = 'V1';
+                if (!node.seoStatus) node.seoStatus = 'under-review';
+                
+                // Get SEO status display
+                const seoDisplay = node.seoStatus === 'approved' ? '✓ SEO Approved' : '⏳ SEO Under Review';
+                const seoClass = node.seoStatus === 'approved' ? 'seo-approved' : 'seo-review';
 
                 nodeEl.innerHTML = `
                     <div class="connection-point top" data-point="top" data-node-id="${node.id}"></div>
@@ -963,13 +1033,18 @@
                     <div class="connection-point right" data-point="right" data-node-id="${node.id}"></div>
                     
                     <div class="page-node-header">
-                        <div class="page-node-icon" style="background: ${node.color};">${node.icon}</div>
-                        <div class="page-node-title">${node.title}</div>
+                        <div class="page-node-icon" style="background: white; color: ${currentType.border}; border: 2px solid ${currentType.border};">${node.icon}</div>
+                        <div class="page-node-title" style="color: ${currentType.text};">${node.title}</div>
                     </div>
                     <div class="page-node-status ${statusClass}">${statusText}</div>
-                    <div class="page-node-actions">
-                        <button class="node-action-btn" onclick="app.selectNode(${node.id})">Edit</button>
-                        <button class="node-action-btn" onclick="app.deleteNode(${node.id})">Delete</button>
+                    <div class="page-node-indicators">
+                        <div class="node-indicator template-indicator">
+                            <span class="indicator-label">Template:</span>
+                            <span class="indicator-value">${node.template}</span>
+                        </div>
+                        <div class="node-indicator seo-indicator ${seoClass}">
+                            <span class="indicator-value">${seoDisplay}</span>
+                        </div>
                     </div>
                 `;
 
@@ -1281,7 +1356,11 @@
                     icon: nodeConfig.icon,
                     color: nodeConfig.color,
                     description: '',
-                    status: 'new'
+                    status: 'new',
+                    template: 'V1',
+                    seoKeywords: '',
+                    seoStatus: 'under-review',
+                    navCategory: ''
                 };
 
                 this.nodes.push(newNode);
@@ -1334,6 +1413,23 @@
                 }
 
                 const node = this.selectedNode;
+                
+                // Initialize new properties if they don't exist
+                if (!node.template) node.template = 'V1';
+                if (!node.seoKeywords) node.seoKeywords = '';
+                if (!node.seoStatus) node.seoStatus = 'under-review';
+                if (!node.navCategory) node.navCategory = '';
+                
+                // Get page type color for visual indicator
+                const typeColors = {
+                    home: { bg: '#e3f2fd', color: '#2196f3', label: '🏠 Home Page' },
+                    service: { bg: '#f3e5f5', color: '#9c27b0', label: '🎯 Service Line Page' },
+                    subservice: { bg: '#e0f2f1', color: '#00897b', label: '📊 Sub-Service Line Page' },
+                    property: { bg: '#fff3e0', color: '#ff9800', label: '🏢 Property Listings' },
+                    content: { bg: '#e8f5e9', color: '#4caf50', label: '📄 Content Page' }
+                };
+                const currentType = typeColors[node.type] || typeColors.content;
+                
                 panel.innerHTML = `
                     <div class="form-group">
                         <label class="form-label">Page Title</label>
@@ -1351,14 +1447,59 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Page Type</label>
-                        <select class="form-select" onchange="app.updateNodeProperty('type', this.value)">
-                            <option value="home" ${node.type === 'home' ? 'selected' : ''}>Home Page</option>
-                            <option value="service" ${node.type === 'service' ? 'selected' : ''}>Service Line Page</option>
-                            <option value="subservice" ${node.type === 'subservice' ? 'selected' : ''}>Sub-Service Line Page</option>
-                            <option value="property" ${node.type === 'property' ? 'selected' : ''}>Property Listings</option>
-                            <option value="content" ${node.type === 'content' ? 'selected' : ''}>Content Page</option>
+                        <label class="form-label">Template Version</label>
+                        <select class="form-select" onchange="app.updateNodeProperty('template', this.value)">
+                            <option value="V1" ${node.template === 'V1' ? 'selected' : ''}>Template V1</option>
+                            <option value="V2" ${node.template === 'V2' ? 'selected' : ''}>Template V2</option>
                         </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Page Type</label>
+                        <div style="background: ${currentType.bg}; color: ${currentType.color}; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-weight: 600; border: 2px solid ${currentType.color};">
+                            ${currentType.label}
+                        </div>
+                        <select class="form-select" onchange="app.updateNodeProperty('type', this.value)">
+                            <option value="home" ${node.type === 'home' ? 'selected' : ''}>🏠 Home Page</option>
+                            <option value="service" ${node.type === 'service' ? 'selected' : ''}>🎯 Service Line Page</option>
+                            <option value="subservice" ${node.type === 'subservice' ? 'selected' : ''}>📊 Sub-Service Line Page</option>
+                            <option value="property" ${node.type === 'property' ? 'selected' : ''}>🏢 Property Listings</option>
+                            <option value="content" ${node.type === 'content' ? 'selected' : ''}>📄 Content Page</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Navigation Category</label>
+                        <select class="form-select" onchange="app.updateNodeProperty('navCategory', this.value)">
+                            <option value="" ${node.navCategory === '' ? 'selected' : ''}>-- Select Category --</option>
+                            <option value="invest-real-estate" ${node.navCategory === 'invest-real-estate' ? 'selected' : ''}>Invest in real estate</option>
+                            <option value="manage-optimise" ${node.navCategory === 'manage-optimise' ? 'selected' : ''}>Manage and optimise assets</option>
+                            <option value="finance-value" ${node.navCategory === 'finance-value' ? 'selected' : ''}>Finance and value real estate</option>
+                            <option value="develop-refurbish" ${node.navCategory === 'develop-refurbish' ? 'selected' : ''}>Develop, refurbish and projects</option>
+                            <option value="occupier-advice" ${node.navCategory === 'occupier-advice' ? 'selected' : ''}>Occupier advice and strategy</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">SEO Keywords</label>
+                        <textarea class="form-textarea" placeholder="Paste SEO keywords here (one per line or comma-separated)" 
+                            onchange="app.updateNodeProperty('seoKeywords', this.value)">${node.seoKeywords}</textarea>
+                        <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px;">
+                                <input type="radio" name="seoStatus-${node.id}" value="under-review" 
+                                    ${node.seoStatus === 'under-review' ? 'checked' : ''}
+                                    onchange="app.updateNodeProperty('seoStatus', this.value)"
+                                    style="margin-right: 5px;">
+                                Under Review
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px;">
+                                <input type="radio" name="seoStatus-${node.id}" value="approved" 
+                                    ${node.seoStatus === 'approved' ? 'checked' : ''}
+                                    onchange="app.updateNodeProperty('seoStatus', this.value)"
+                                    style="margin-right: 5px;">
+                                Approved
+                            </label>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -1391,16 +1532,35 @@
                 if (this.selectedNode) {
                     this.selectedNode[property] = value;
                     
-                    // Update visual if title, type, or status changed
-                    if (property === 'title' || property === 'type' || property === 'status') {
+                    // Update visual if title, type, status, template, or seoStatus changed
+                    if (property === 'title' || property === 'type' || property === 'status' || property === 'template' || property === 'seoStatus') {
                         const nodeEl = document.querySelector(`[data-node-id="${this.selectedNode.id}"]`);
                         if (nodeEl) {
                             if (property === 'type') {
                                 const config = this.getNodeConfig(value);
                                 this.selectedNode.icon = config.icon;
                                 this.selectedNode.color = config.color;
+                                
+                                // Update color coding
+                                const typeColors = {
+                                    home: { border: '#2196f3', bg: '#e3f2fd', text: '#1565c0' },
+                                    service: { border: '#9c27b0', bg: '#f3e5f5', text: '#6a1b9a' },
+                                    subservice: { border: '#00897b', bg: '#e0f2f1', text: '#00695c' },
+                                    property: { border: '#ff9800', bg: '#fff3e0', text: '#e65100' },
+                                    content: { border: '#4caf50', bg: '#e8f5e9', text: '#2e7d32' }
+                                };
+                                const currentType = typeColors[value] || typeColors.content;
+                                
+                                nodeEl.style.background = currentType.bg;
+                                nodeEl.style.borderColor = currentType.border;
                                 nodeEl.querySelector('.page-node-icon').textContent = this.selectedNode.icon;
-                                nodeEl.querySelector('.page-node-icon').style.background = this.selectedNode.color;
+                                nodeEl.querySelector('.page-node-icon').style.background = 'white';
+                                nodeEl.querySelector('.page-node-icon').style.color = currentType.border;
+                                nodeEl.querySelector('.page-node-icon').style.border = `2px solid ${currentType.border}`;
+                                nodeEl.querySelector('.page-node-title').style.color = currentType.text;
+                                
+                                // Re-render properties to show updated color indicator
+                                this.renderProperties();
                             }
                             if (property === 'title') {
                                 nodeEl.querySelector('.page-node-title').textContent = this.selectedNode.title;
@@ -1409,6 +1569,22 @@
                                 const statusEl = nodeEl.querySelector('.page-node-status');
                                 statusEl.className = 'page-node-status ' + (value === 'new' ? 'new' : 'existing');
                                 statusEl.textContent = value === 'new' ? 'New Page' : 'Existing Page';
+                            }
+                            if (property === 'template') {
+                                const templateEl = nodeEl.querySelector('.template-indicator .indicator-value');
+                                if (templateEl) {
+                                    templateEl.textContent = value;
+                                }
+                            }
+                            if (property === 'seoStatus') {
+                                const seoEl = nodeEl.querySelector('.seo-indicator');
+                                const seoValueEl = nodeEl.querySelector('.seo-indicator .indicator-value');
+                                if (seoEl && seoValueEl) {
+                                    const seoDisplay = value === 'approved' ? '✓ SEO Approved' : '⏳ SEO Under Review';
+                                    const seoClass = value === 'approved' ? 'seo-approved' : 'seo-review';
+                                    seoEl.className = 'node-indicator seo-indicator ' + seoClass;
+                                    seoValueEl.textContent = seoDisplay;
+                                }
                             }
                         }
                     }
